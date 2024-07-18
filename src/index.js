@@ -4,6 +4,7 @@ const morgan= require('morgan');
 const{createProxyMiddleware}=require('http-proxy-middleware');
 const{PORT}=require('./config/serverConfig')
 const rateLimit=require('express-rate-limit'); 
+const axios= require('axios');
 app.use(morgan('combined'));
 
 const limiter = rateLimit({
@@ -20,6 +21,49 @@ app.use(limiter);
 
 
 // app.use('/bookingService',createProxyMiddleware({target:'http://localhost:3002/',changeOrigin:true}));
+
+
+app.use('/bookingservice',async(req,res,next)=>{
+  console.log(req.headers['x-access-token']);
+
+  try {
+    const response= await axios.get('http://localhost:3001/api/v1/isauthenticated',{
+      headers:{
+        'x-access-token': req.headers['x-access-token']
+      }
+    });
+    console.log(response.data);
+    if(response.data.success)
+    {
+        next();
+    }
+    else{
+      res.status(401).json({
+        message: 'Authentication failed'
+      })
+    }
+  } catch (error) {
+      return res.status(401).json({
+        message: 'Unauthorised'
+      })
+  }
+
+
+  
+  //console.log("Hi");
+  // next();
+  // if(response.data.success)
+  // {
+  //   next();
+  // }
+  // else{
+  //   return res.status(401).json({
+  //     message:'Authentication failed'
+  //   })
+  // }
+  
+})
+
 
 app.use('/bookingService', createProxyMiddleware({
     target: 'http://localhost:3002',
